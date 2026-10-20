@@ -4,10 +4,10 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppI
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from yt_dlp import YoutubeDL
 
-# 1. ضع توكن البوت الذي حصلت عليه من BotFather
-TOKEN = "YOUR_BOT_TOKEN_HERE"
+# 1. توكن البوت الخاص بك
+TOKEN = "8619065741:AAEfJxid4ahp66sG2DU0X8X34W4F0iCiCfc"
 
-# 2. ضع رابط صفحة GitHub Pages الخاصة بك التي أنشأتها لملف index.html
+# 2. استبدل هذا الرابط برابط GitHub Pages الخاص بك بعد تفعيله (الذي يحتوي على index.html)
 MINI_APP_URL = "https://YOUR_USERNAME.github.io/YOUR_REPOSITORY_NAME/"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
