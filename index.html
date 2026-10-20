@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تحميل المقطع</title>
-    <!-- مكتبة تلجرام للـ Mini Apps -->
+    <!-- مكتبة تلجرام الرسمية للـ Mini Apps -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
@@ -21,72 +21,93 @@
             box-sizing: border-box;
             text-align: center;
         }
-        .container {
+        .card {
             background: var(--tg-theme-secondary-bg-color, #1e1e1e);
-            padding: 25px;
+            padding: 25px 20px;
             border-radius: 16px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
             width: 100%;
-            max-width: 350px;
+            max-width: 360px;
         }
-        h2 { font-size: 18px; margin-bottom: 15px; }
+        h2 { font-size: 18px; margin-bottom: 12px; }
+        p { font-size: 14px; color: #aaaaaa; margin-bottom: 15px; }
+        .timer {
+            font-size: 32px;
+            font-weight: bold;
+            color: #24a1de;
+            margin: 15px 0;
+        }
         .btn {
-            background-color: #24A1DE;
-            color: white;
+            background-color: #24a1de;
+            color: #ffffff;
             border: none;
             padding: 14px 20px;
             font-size: 16px;
             font-weight: bold;
-            border-radius: 10px;
+            border-radius: 12px;
             cursor: pointer;
             width: 100%;
-            margin-top: 15px;
+            margin-top: 10px;
             text-decoration: none;
             display: inline-block;
+            box-sizing: border-box;
         }
-        .btn:disabled {
-            background-color: #555;
-            cursor: not-allowed;
+        .btn:hover { background-color: #1c82b6; }
+        .coupon-box {
+            margin-top: 20px;
+            padding: 10px;
+            background: rgba(36, 161, 222, 0.1);
+            border: 1px dashed #24a1de;
+            border-radius: 10px;
+            font-size: 13px;
         }
-        .timer { font-size: 24px; font-weight: bold; color: #24A1DE; margin: 10px 0; }
     </style>
 
-    <!-- ⚠️ ضع كود Adsterra Social Bar الخاص بك هنا ⚠️ -->
-    <!-- مثال لكود السكريبت الذي تعطيك إياه Adsterra: -->
-    <!-- <script type='text/javascript' src='//plXXXXX.gslb.adsterra.com/...'></script> -->
+    <!-- ⚠️ ضع كود Adsterra Social Bar الخاص بك أسفل هذا السطر ⚠️ -->
+    <!-- مثال لكود Adsterra: -->
+    <!-- <script type='text/javascript' src='//pl12345678.gslb.adsterra.com/...'></script> -->
 
 </head>
 <body>
 
-<div class="container">
-    <h2>🚀 جاري تجهيز المقطع للتحميل...</h2>
+<div class="card">
+    <h2>🚀 جاري تجهيز رابط التحميل...</h2>
     <div id="timer" class="timer">5</div>
-    <p>انتظر بضع ثوانٍ ليتم تحضير رابط التحميل المباشر</p>
-    
-    <a id="downloadBtn" href="#" class="btn" style="display:none;">📥 اضغط هنا للتحميل الآن</a>
+    <p id="statusText">يرجى الانتظار بضع ثوانٍ لتحضير الفيديو بجودة عالية</p>
+
+    <!-- زر التحميل المباشر يظهر بعد انتهاء العداد -->
+    <a id="downloadBtn" href="#" class="btn" style="display:none;" target="_blank">📥 اضغط هنا للتحميل الآن</a>
+
+    <!-- كود خصم نون لزيادة الأرباح -->
+    <div class="coupon-box">
+        🛍️ **كود خصم نون السعودية (خصم 10%):** <b style="color:#24a1de;">SA99</b>
+    </div>
 </div>
 
 <script>
-    // تهيئة تطبيق التلجرام المصغر
+    // تهيئة واجهة تلجرام
     const tg = window.Telegram.WebApp;
-    tg.expand(); // فتح الشاشة بالكامل
+    tg.expand();
 
-    // استخراج رابط الفيديو الممرر عبر الـ URL
+    // جلب رابط الفيديو الممرر عبر الـ URL
     const urlParams = new URLSearchParams(window.location.search);
     const videoUrl = urlParams.get('video_url');
 
     let timeLeft = 5;
     const timerElement = document.getElementById('timer');
+    const statusText = document.getElementById('statusText');
     const downloadBtn = document.getElementById('downloadBtn');
 
+    // عداد التنازلي لمدة 5 ثوانٍ لعرض إعلان Social Bar
     const countdown = setInterval(() => {
         timeLeft--;
         timerElement.textContent = timeLeft;
         if (timeLeft <= 0) {
             clearInterval(countdown);
             timerElement.style.display = 'none';
+            statusText.textContent = "✅ الرابط جاهز للتحميل!";
             if (videoUrl) {
-                downloadBtn.href = videoUrl;
+                downloadBtn.href = decodeURIComponent(videoUrl);
                 downloadBtn.style.display = 'block';
             }
         }
