@@ -4,11 +4,11 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppI
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from yt_dlp import YoutubeDL
 
-# 1. توكن البوت الخاص بك
+# توكن البوت الخاص بك
 TOKEN = "8619065741:AAEfJxid4ahp66sG2DU0X8X34W4F0iCiCfc"
 
-# 2. استبدل هذا الرابط برابط GitHub Pages الخاص بك بعد تفعيله (الذي يحتوي على index.html)
-MINI_APP_URL = "https://YOUR_USERNAME.github.io/YOUR_REPOSITORY_NAME/"
+# رابط الـ Mini App الخاص بك الذي تم استخراجه من GitHub Pages
+MINI_APP_URL = "https://ga11trading11-bot.github.io/Downloader-video/"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_msg = (
