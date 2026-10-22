@@ -63,7 +63,7 @@
         }
     </style>
 
-    <!-- كود Adsterra Social Bar الذي أرسلته -->
+    <!-- كود Adsterra Social Bar -->
     <script type="text/javascript" src="https://bicea.org/14/418b89558b12206f3d5b6ed69c8131b4"></script>
 
 </head>
@@ -71,7 +71,7 @@
 
 <div class="card">
     <h2>🚀 جاري تجهيز رابط التحميل...</h2>
-    <div id="timer" class="timer">5</div>
+    <div id="timer" class="timer">7</div>
     <p id="statusText">يرجى الانتظار بضع ثوانٍ لتحضير الفيديو بجودة عالية</p>
 
     <!-- زر التحميل المباشر يظهر بعد انتهاء العداد -->
@@ -79,7 +79,7 @@
 
     <!-- كود خصم نون لزيادة الأرباح -->
     <div class="coupon-box">
-        🛍️ **كود خصم نون السعودية (خصم 10%):** <b style="color:#24a1de;">SA99</b>
+        🛍️ <b>كود خصم نون السعودية (خصم 10%):</b> <b style="color:#24a1de;">SA99</b>
     </div>
 </div>
 
@@ -92,12 +92,13 @@
     const urlParams = new URLSearchParams(window.location.search);
     const videoUrl = urlParams.get('video_url');
 
-    let timeLeft = 5;
+    // تعديل وقت الانتظار إلى 7 ثوانٍ لاحتساب المشاهدات والإعلانات بنجاح
+    let timeLeft = 7;
     const timerElement = document.getElementById('timer');
     const statusText = document.getElementById('statusText');
     const downloadBtn = document.getElementById('downloadBtn');
 
-    // عداد التنازلي لمدة 5 ثوانٍ لعرض إعلان Social Bar وتحقيق الأرباح
+    // عداد التنازلي لمدة 7 ثوانٍ
     const countdown = setInterval(() => {
         timeLeft--;
         timerElement.textContent = timeLeft;
