@@ -1,7 +1,9 @@
 import os
+import time
 import urllib.parse
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.error import NetworkError
 from yt_dlp import YoutubeDL
 
 # توكن البوت الخاص بك
@@ -67,5 +69,17 @@ if __name__ == '__main__':
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    print("البوت يعمل بنجاح...")
-    app.run_polling()
+    print("البوت يعمل مع نظام إعادة الاتصال التلقائي...")
+    
+    # حلقة تكرار لمنع توقف البوت نهائياً عند حدوث خطأ 503 أو انقطاع الشبكة
+    while True:
+        try:
+            app.run_polling(drop_pending_updates=True)
+        except NetworkError as e:
+            print(f"⚠️ حدث خطأ في الشبكة أو البروكسي (503): {e}")
+            print("🔄 جاري إعادة المحاولة خلال 10 ثوانٍ...")
+            time.sleep(10)
+        except Exception as e:
+            print(f"⚠️ حدث خطأ غير متوقع: {e}")
+            print("🔄 جاري إعادة المحاولة خلال 15 ثانية...")
+            time.sleep(15)
