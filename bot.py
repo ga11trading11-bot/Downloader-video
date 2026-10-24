@@ -1,15 +1,28 @@
 import os
 import time
 import urllib.parse
+import threading
+from flask import Flask
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram.error import NetworkError
 from yt_dlp import YoutubeDL
 
+# إعداد خادم ويب بسيط جداً لإرضاء متطلبات Render المجانية للـ Web Service
+server = Flask(__name__)
+
+@server.route('/')
+def home():
+    return "Bot is running live!"
+
+def run_flask():
+    port = int(os.environ.get("PORT", 10000))
+    server.run(host="0.0.0.0", port=port)
+
 # توكن البوت الخاص بك
 TOKEN = "8619065741:AAEfJxid4ahp66sG2DU0X8X34W4F0iCiCfc"
 
-# رابط الـ Mini App الخاص بك الذي تم استخراجه من GitHub Pages
+# رابط الـ Mini App الخاص بك
 MINI_APP_URL = "https://ga11trading11-bot.github.io/Downloader-video/"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -22,7 +35,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_url = update.message.text.strip()
     
-    # التأكد من أن الرسالة تحتوي على رابط
     if not user_url.startswith(("http://", "https://")):
         await update.message.reply_text("❌ يرجى إرسال رابط فيديو صحيح.")
         return
@@ -30,7 +42,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status_msg = await update.message.reply_text("⏳ جاري استخراج رابط التحميل المباشر...")
 
     try:
-        # إعدادات متقدمة لتخطي حظر التصفح و الروابط القصيرة
         ydl_opts = {
             'format': 'best',
             'quiet': True,
@@ -41,11 +52,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             info = ydl.extract_info(user_url, download=False)
             direct_download_url = info.get('url', user_url)
 
-        # تشفير الرابط لتمريره داخل رابط الـ Mini App
         encoded_video_url = urllib.parse.quote(direct_download_url, safe='')
         full_miniapp_link = f"{MINI_APP_URL}?video_url={encoded_video_url}"
 
-        # بناء زر الـ Mini App التفاعلي
         keyboard = [
             [
                 InlineKeyboardButton(
@@ -65,22 +74,28 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         error_text = str(e)
         print(f"خطأ تفصيلي: {error_text}")
-        # هنا سيظهر لك الخطأ الحقيقي تماماً لنعرف سبب المشكلة
-        await status_msg.edit_text(f"❌ الخطأ التقني:\n{error_text[:150]}")
+        await status_msg.edit_text("❌ تعذر استخراج هذا الرابط. تأكد من إرسال رابط فيديو مباشر وأن الحساب عام.")
 
-if __name__ == '__main__':
-    app = ApplicationBuilder().TOKEN(TOKEN).build() if hasattr(ApplicationBuilder(), 'TOKEN') else ApplicationBuilder().token(TOKEN).build()
+def main():
+    # تشغيل سيرفر الويب في خيط (Thread) منفصل ليعمل البوت جنباً إلى جنب معه
+    t = threading.Thread(target=run_flask)
+    t.start()
+
+    app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    print("البوت يعمل مع نظام إعادة الاتصال التلقائي...")
+    print("البوت يعمل مع سيرفر الويب ونظام إعادة الاتصال التلقائي...")
     
     while True:
         try:
             app.run_polling(drop_pending_updates=True)
         except NetworkError as e:
-            print(f"⚠️ خطأ شبكة (503): {e}")
+            print(f"⚠️ خطأ شبكة: {e}")
             time.sleep(10)
         except Exception as e:
             print(f"⚠️ خطأ عام: {e}")
             time.sleep(15)
+
+if __name__ == '__main__':
+    main()
