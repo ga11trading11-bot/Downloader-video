@@ -61,8 +61,8 @@
             }
 
             try {
-                // ⚠️ استبدل الرابط أدناه برابط سيرفرك الحقيقي على Render
-                const renderBackendUrl = "https://YOUR-RENDER-APP-NAME.onrender.com/api/extract?url=" + encodeURIComponent(videoUrl);
+                // استخدام رابط سيرفرك المباشر على Render
+                const renderBackendUrl = "https://downloader-video-gxmp.onrender.com/api/extract?url=" + encodeURIComponent(videoUrl);
 
                 const response = await fetch(renderBackendUrl);
                 const data = await response.json();
