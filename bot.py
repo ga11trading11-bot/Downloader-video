@@ -43,16 +43,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         direct_download_url = None
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
 
-        # 1. محاولة استخدام خدمة بديلة سريعة لجلب رابط تيك توك وتخطي الحظر
+        # فك الرابط المختصر إذا كان تيك توك قصير (vt.tiktok.com)
         if "tiktok.com" in user_url:
+            try:
+                r = requests.head(user_url, allow_redirects=True, headers=headers, timeout=5)
+                user_url = r.url
+            except Exception:
+                pass
+
+            # جلب الرابط المباشر من API تيك توك مع إضافة الـ Headers لتخطي الحظر
             api_url = f"https://tikwm.com/api/?url={urllib.parse.quote(user_url)}"
-            response = requests.get(api_url, timeout=10)
+            response = requests.get(api_url, headers=headers, timeout=10)
             data = response.json()
             if data.get("code") == 0:
                 direct_download_url = data["data"]["play"]
 
-        # 2. إذا لم يكن تيك توك أو فشلت الطريقة، نستخدم الطريقة العامة
+        # إذا لم يكن تيك توك أو فشلت الطريقة، نستخدم yt-dlp كبديل
         if not direct_download_url:
             from yt_dlp import YoutubeDL
             ydl_opts = {
@@ -61,7 +69,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 'no_warnings': True,
                 'nocheckcertificate': True,
                 'geo_bypass': True,
-                'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             }
             with YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(user_url, download=False)
