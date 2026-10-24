@@ -1,4 +1,4 @@
-import os
+herimport os
 import time
 import urllib.parse
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
@@ -30,11 +30,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status_msg = await update.message.reply_text("⏳ جاري استخراج رابط التحميل المباشر...")
 
     try:
-        # استخراج رابط التحميل المباشر للمقطع باستعمال yt-dlp دون تنزيله على السيرفر
+        # استخراج رابط التحميل المباشر مع إضافة user_agent لمنع الحظر من المنصات
         ydl_opts = {
             'format': 'best',
             'quiet': True,
             'no_warnings': True,
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         }
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(user_url, download=False)
@@ -62,7 +63,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     except Exception as e:
-        await status_msg.edit_text("❌ تعذر استخراج هذا الرابط. تأكد من أن الحساب عام وليس خاصاً.")
+        print(f"خطأ في استخراج الرابط: {e}")
+        await status_msg.edit_text("❌ تعذر استخراج هذا الرابط. تأكد من إرسال رابط فيديو مباشر (وليس بروفايل حساب) وأن الحساب عام.")
 
 if __name__ == '__main__':
     app = ApplicationBuilder().token(TOKEN).build()
