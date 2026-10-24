@@ -2,11 +2,11 @@ import os
 import time
 import urllib.parse
 import threading
+import requests
 from flask import Flask
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram.error import NetworkError
-from yt_dlp import YoutubeDL
 
 # إعداد خادم ويب بسيط لإرضاء متطلبات Render المجانية
 server = Flask(__name__)
@@ -42,17 +42,33 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status_msg = await update.message.reply_text("⏳ جاري استخراج رابط التحميل المباشر...")
 
     try:
-        ydl_opts = {
-            'format': 'best',
-            'quiet': True,
-            'no_warnings': True,
-            'nocheckcertificate': True,
-            'geo_bypass': True,
-            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        }
-        with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(user_url, download=False)
-            direct_download_url = info.get('url', user_url)
+        direct_download_url = None
+
+        # 1. محاولة استخدام خدمة بديلة سريعة لجلب رابط تيك توك وتخطي الحظر
+        if "tiktok.com" in user_url:
+            api_url = f"https://tikwm.com/api/?url={urllib.parse.quote(user_url)}"
+            response = requests.get(api_url, timeout=10)
+            data = response.json()
+            if data.get("code") == 0:
+                direct_download_url = data["data"]["play"]
+
+        # 2. إذا لم يكن تيك توك أو فشلت الطريقة، نستخدم الطريقة العامة
+        if not direct_download_url:
+            from yt_dlp import YoutubeDL
+            ydl_opts = {
+                'format': 'best',
+                'quiet': True,
+                'no_warnings': True,
+                'nocheckcertificate': True,
+                'geo_bypass': True,
+                'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            }
+            with YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(user_url, download=False)
+                direct_download_url = info.get('url', user_url)
+
+        if not direct_download_url:
+            raise Exception("لم يتم العثور على رابط التحميل المباشر.")
 
         encoded_video_url = urllib.parse.quote(direct_download_url, safe='')
         full_miniapp_link = f"{MINI_APP_URL}?video_url={encoded_video_url}"
@@ -76,8 +92,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         error_text = str(e)
         print(f"خطأ تفصيلي: {error_text}")
-        # هذا السطر سيعرض الخطأ الحقيقي تماماً في البوت لنعرف سببه فوراً
-        await status_msg.edit_text(f"❌ الخطأ التقني الحقيقي:\n{error_text}")
+        await status_msg.edit_text("❌ تعذر استخراج هذا الرابط. تأكد من أن الرابط مباشر وأن الحساب عام.")
 
 def main():
     t = threading.Thread(target=run_flask)
