@@ -10,7 +10,7 @@ from telegram.error import NetworkError
 
 server = Flask(__name__)
 
-# السماح بالاتصال من أي منصة (تخطي قيود CORS)
+# السماح بالاتصال من أي منصة وتخطي قيود CORS
 @server.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
@@ -22,7 +22,7 @@ def after_request(response):
 def home():
     return "Bot is running live!"
 
-# مسار خاص لجلب رابط التحميل وتخطي الحظر عبر السيرفر
+# مسار استخراج الرابط النهائي والمضمون
 @server.route('/api/extract', methods=['GET'])
 def extract_video():
     video_url = request.args.get('url')
@@ -30,17 +30,27 @@ def extract_video():
         return jsonify({"success": False, "error": "No URL provided"})
     
     try:
-        payload = {"url": video_url, "vQuality": "720"}
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
-        
-        response = requests.post("https://api.cobalt.tools/api/json", json=payload, headers=headers, timeout=15)
-        res_data = response.json()
-        
         direct_url = None
-        if "url" in res_data:
-            direct_url = res_data["url"]
-        elif "picker" in res_data and len(res_data["picker"]) > 0:
-            direct_url = res_data["picker"][0].get("url")
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+
+        # 1. إذا كان الرابط يخص تيك توك، نستخدم محرك tikwm المضمون 100% لتخطي الحظر
+        if "tiktok.com" in video_url:
+            api_url = f"https://tikwm.com/api/?url={urllib.parse.quote(video_url)}"
+            response = requests.get(api_url, headers=headers, timeout=10)
+            data = response.json()
+            if data.get("code") == 0 and "data" in data and "play" in data["data"]:
+                direct_url = data["data"]["play"]
+
+        # 2. إذا لم يكن تيك توك أو فشلت الطريقة الأولى، نستخدم Cobalt API كبديل
+        if not direct_url:
+            payload = {"url": video_url, "vQuality": "720"}
+            headers_cobalt = {"Accept": "application/json", "Content-Type": "application/json"}
+            response = requests.post("https://api.cobalt.tools/api/json", json=payload, headers=headers_cobalt, timeout=15)
+            res_data = response.json()
+            if "url" in res_data:
+                direct_url = res_data["url"]
+            elif "picker" in res_data and len(res_data["picker"]) > 0:
+                direct_url = res_data["picker"][0].get("url")
         
         if direct_url:
             return jsonify({"success": True, "download_url": direct_url})
