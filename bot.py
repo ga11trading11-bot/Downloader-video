@@ -42,7 +42,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status_msg = await update.message.reply_text("⏳ جاري استخراج رابط التحميل المباشر...")
 
     try:
-        # إعدادات متقدمة لتجاوز حظر الـ IP والروابط القصيرة
         ydl_opts = {
             'format': 'best',
             'quiet': True,
@@ -77,7 +76,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         error_text = str(e)
         print(f"خطأ تفصيلي: {error_text}")
-        await status_msg.edit_text("❌ تعذر استخراج هذا الرابط. تأكد من إرسال رابط فيديو مباشر وأن الحساب عام.")
+        # هذا السطر سيعرض الخطأ الحقيقي تماماً في البوت لنعرف سببه فوراً
+        await status_msg.edit_text(f"❌ الخطأ التقني الحقيقي:\n{error_text}")
 
 def main():
     t = threading.Thread(target=run_flask)
