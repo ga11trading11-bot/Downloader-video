@@ -1,69 +1,98 @@
-import os
-import time
-import urllib.parse
-import threading
-from flask import Flask
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
-from telegram.error import NetworkError
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحميل الفيديوهات</title>
+    <style>
+        body { 
+            font-family: Tahoma, sans-serif; 
+            text-align: center; 
+            background: #0f172a; 
+            color: #fff; 
+            padding: 20px; 
+            margin: 0;
+        }
+        .container { 
+            margin-top: 50px; 
+        }
+        a.btn { 
+            display: inline-block; 
+            background: #10b981; 
+            color: white; 
+            padding: 14px 28px; 
+            text-decoration: none; 
+            border-radius: 10px; 
+            font-weight: bold; 
+            margin-top: 20px; 
+            font-size: 16px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2); 
+        }
+        .loading { 
+            font-size: 18px; 
+            color: #f59e0b; 
+            margin-top: 20px; 
+        }
+        .error { 
+            font-size: 16px; 
+            color: #ef4444; 
+            margin-top: 20px; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>تحميل المقطع 📥</h2>
+        <p id="status" class="loading">⏳ جاري معالجة الرابط عبر جهازك...</p>
+        <div id="result"></div>
+    </div>
 
-server = Flask(__name__)
+    <script>
+        async function processVideo() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const videoUrl = urlParams.get('url');
+            const statusEl = document.getElementById('status');
+            const resultEl = document.getElementById('result');
 
-@server.route('/')
-def home():
-    return "Bot is running live!"
+            if (!videoUrl) {
+                statusEl.className = "error";
+                statusEl.innerText = "❌ لم يتم العثور على أي رابط!";
+                return;
+            }
 
-def run_flask():
-    port = int(os.environ.get("PORT", 10000))
-    server.run(host="0.0.0.0", port=port)
+            try {
+                const response = await fetch("https://api.cobalt.tools/api/json", {
+                    method: "POST",
+                    headers: {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ url: videoUrl, vQuality: "720" })
+                });
 
-TOKEN = "8619065741:AAEfJxid4ahp66sG2DU0X8X34W4F0iCiCfc"
-MINI_APP_URL = "https://ga11trading11-bot.github.io/Downloader-video/" # رابط موقعك على GitHub Pages
+                const data = await response.json();
+                let directUrl = null;
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("أهلاً بك في بوت التحميل 🚀\nأرسل لي أي رابط فيديو وسأجهزه لك فوراً.")
+                if (data.url) {
+                    directUrl = data.url;
+                } else if (data.picker && data.picker.length > 0) {
+                    directUrl = data.picker[0].url;
+                }
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_url = update.message.text.strip()
-    
-    if not user_url.startswith(("http://", "https://")):
-        await update.message.reply_text("❌ يرجى إرسال رابط فيديو صحيح.")
-        return
+                if (directUrl) {
+                    statusEl.innerText = "✅ تم تجهيز الفيديو بنجاح!";
+                    resultEl.innerHTML = `<a class="btn" href="${directUrl}" target="_blank">📥 اضغط هنا للتحميل المباشر</a>`;
+                } else {
+                    statusEl.className = "error";
+                    statusEl.innerText = "❌ تعذر استخراج الرابط. تأكد أن الحساب عام وليس خاصاً.";
+                }
+            } catch (err) {
+                statusEl.className = "error";
+                statusEl.innerText = "❌ حدث خطأ في الاتصال، يرجى المحاولة مرة أخرى.";
+            }
+        }
 
-    # تمرير الرابط الأصلي للـ Mini App عبر الباراميتر
-    encoded_url = urllib.parse.quote(user_url, safe='')
-    full_miniapp_link = f"{MINI_APP_URL}?url={encoded_url}"
-
-    keyboard = [
-        [
-            InlineKeyboardButton(
-                text="📥 اضغط هنا للتحميل ومشاهدة الفيديو",
-                web_app=WebAppInfo(url=full_miniapp_link)
-            )
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.message.reply_text(
-        "✅ تم تجهيز رابطك بنجاح!\nاضغط على الزر أدناه للتحميل المباشر:",
-        reply_markup=reply_markup
-    )
-
-def main():
-    t = threading.Thread(target=run_flask)
-    t.start()
-
-    app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    
-    while True:
-        try:
-            app.run_polling(drop_pending_updates=True)
-        except NetworkError:
-            time.sleep(10)
-        except Exception:
-            time.sleep(15)
-
-if __name__ == '__main__':
-    main()
+        processVideo();
+    </script>
+</body>
+</html>
