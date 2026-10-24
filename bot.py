@@ -8,7 +8,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 from telegram.error import NetworkError
 from yt_dlp import YoutubeDL
 
-# إعداد خادم ويب بسيط جداً لإرضاء متطلبات Render المجانية للـ Web Service
+# إعداد خادم ويب بسيط لإرضاء متطلبات Render المجانية
 server = Flask(__name__)
 
 @server.route('/')
@@ -42,10 +42,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status_msg = await update.message.reply_text("⏳ جاري استخراج رابط التحميل المباشر...")
 
     try:
+        # إعدادات متقدمة لتجاوز حظر الـ IP والروابط القصيرة
         ydl_opts = {
             'format': 'best',
             'quiet': True,
             'no_warnings': True,
+            'nocheckcertificate': True,
+            'geo_bypass': True,
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         }
         with YoutubeDL(ydl_opts) as ydl:
@@ -77,7 +80,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await status_msg.edit_text("❌ تعذر استخراج هذا الرابط. تأكد من إرسال رابط فيديو مباشر وأن الحساب عام.")
 
 def main():
-    # تشغيل سيرفر الويب في خيط (Thread) منفصل ليعمل البوت جنباً إلى جنب معه
     t = threading.Thread(target=run_flask)
     t.start()
 
@@ -85,7 +87,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    print("البوت يعمل مع سيرفر الويب ونظام إعادة الاتصال التلقائي...")
+    print("البوت يعمل بنجاح على Render...")
     
     while True:
         try:
