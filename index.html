@@ -43,7 +43,7 @@
 <body>
     <div class="container">
         <h2>تحميل المقطع 📥</h2>
-        <p id="status" class="loading">⏳ جاري معالجة الرابط عبر جهازك...</p>
+        <p id="status" class="loading">⏳ جاري معالجة الرابط عبر السيرفر...</p>
         <div id="result"></div>
     </div>
 
@@ -61,27 +61,15 @@
             }
 
             try {
-                const response = await fetch("https://api.cobalt.tools/api/json", {
-                    method: "POST",
-                    headers: {
-                        "Accept": "application/json",
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ url: videoUrl, vQuality: "720" })
-                });
+                // ⚠️ استبدل الرابط أدناه برابط سيرفرك الحقيقي على Render
+                const renderBackendUrl = "https://YOUR-RENDER-APP-NAME.onrender.com/api/extract?url=" + encodeURIComponent(videoUrl);
 
+                const response = await fetch(renderBackendUrl);
                 const data = await response.json();
-                let directUrl = null;
 
-                if (data.url) {
-                    directUrl = data.url;
-                } else if (data.picker && data.picker.length > 0) {
-                    directUrl = data.picker[0].url;
-                }
-
-                if (directUrl) {
+                if (data.success && data.download_url) {
                     statusEl.innerText = "✅ تم تجهيز الفيديو بنجاح!";
-                    resultEl.innerHTML = `<a class="btn" href="${directUrl}" target="_blank">📥 اضغط هنا للتحميل المباشر</a>`;
+                    resultEl.innerHTML = `<a class="btn" href="${data.download_url}" target="_blank">📥 اضغط هنا للتحميل المباشر</a>`;
                 } else {
                     statusEl.className = "error";
                     statusEl.innerText = "❌ تعذر استخراج الرابط. تأكد أن الحساب عام وليس خاصاً.";
