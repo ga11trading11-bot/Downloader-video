@@ -43,44 +43,33 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         direct_download_url = None
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-
-        # فك الرابط المختصر إذا كان تيك توك قصير (vt.tiktok.com)
-        if "tiktok.com" in user_url:
-            try:
-                r = requests.head(user_url, allow_redirects=True, headers=headers, timeout=5)
-                user_url = r.url
-            except Exception:
-                pass
-
-            # جلب الرابط المباشر من API تيك توك مع إضافة الـ Headers لتخطي الحظر
-            api_url = f"https://tikwm.com/api/?url={urllib.parse.quote(user_url)}"
-            response = requests.get(api_url, headers=headers, timeout=10)
-            data = response.json()
-            if data.get("code") == 0:
-                direct_download_url = data["data"]["play"]
-
-        # إذا لم يكن تيك توك أو فشلت الطريقة، نستخدم yt-dlp كبديل
-        if not direct_download_url:
-            from yt_dlp import YoutubeDL
-            ydl_opts = {
-                'format': 'best',
-                'quiet': True,
-                'no_warnings': True,
-                'nocheckcertificate': True,
-                'geo_bypass': True,
-                'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            }
-            with YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(user_url, download=False)
-                direct_download_url = info.get('url', user_url)
+        
+        # استخدام Cobalt API الموثوق لتجاوز حظر السيرفرات لجميع المنصات
+        payload = {
+            "url": user_url,
+            "vQuality": "720"
+        }
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.post("https://api.cobalt.tools/api/json", json=payload, headers=headers, timeout=15)
+        res_data = response.json()
+        
+        if "url" in res_data:
+            direct_download_url = res_data["url"]
+        elif "picker" in res_data and len(res_data["picker"]) > 0:
+            direct_download_url = res_data["picker"][0].get("url")
 
         if not direct_download_url:
             raise Exception("لم يتم العثور على رابط التحميل المباشر.")
 
+        # تشفير الرابط لتمريره داخل رابط الـ Mini App
         encoded_video_url = urllib.parse.quote(direct_download_url, safe='')
         full_miniapp_link = f"{MINI_APP_URL}?video_url={encoded_video_url}"
 
+        # بناء زر الـ Mini App التفاعلي
         keyboard = [
             [
                 InlineKeyboardButton(
