@@ -1,4 +1,4 @@
-herimport os
+import os
 import time
 import urllib.parse
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
@@ -30,7 +30,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status_msg = await update.message.reply_text("⏳ جاري استخراج رابط التحميل المباشر...")
 
     try:
-        # استخراج رابط التحميل المباشر مع إضافة user_agent لمنع الحظر من المنصات
+        # إعدادات متقدمة لتخطي حظر التصفح و الروابط القصيرة
         ydl_opts = {
             'format': 'best',
             'quiet': True,
@@ -63,25 +63,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     except Exception as e:
-        print(f"خطأ في استخراج الرابط: {e}")
-        await status_msg.edit_text("❌ تعذر استخراج هذا الرابط. تأكد من إرسال رابط فيديو مباشر (وليس بروفايل حساب) وأن الحساب عام.")
+        error_text = str(e)
+        print(f"خطأ تفصيلي: {error_text}")
+        # هنا سيظهر لك الخطأ الحقيقي تماماً لنعرف سبب المشكلة
+        await status_msg.edit_text(f"❌ الخطأ التقني:\n{error_text[:150]}")
 
 if __name__ == '__main__':
-    app = ApplicationBuilder().token(TOKEN).build()
+    app = ApplicationBuilder().TOKEN(TOKEN).build() if hasattr(ApplicationBuilder(), 'TOKEN') else ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     print("البوت يعمل مع نظام إعادة الاتصال التلقائي...")
     
-    # حلقة تكرار لمنع توقف البوت نهائياً عند حدوث خطأ 503 أو انقطاع الشبكة
     while True:
         try:
             app.run_polling(drop_pending_updates=True)
         except NetworkError as e:
-            print(f"⚠️ حدث خطأ في الشبكة أو البروكسي (503): {e}")
-            print("🔄 جاري إعادة المحاولة خلال 10 ثوانٍ...")
+            print(f"⚠️ خطأ شبكة (503): {e}")
             time.sleep(10)
         except Exception as e:
-            print(f"⚠️ حدث خطأ غير متوقع: {e}")
-            print("🔄 جاري إعادة المحاولة خلال 15 ثانية...")
+            print(f"⚠️ خطأ عام: {e}")
             time.sleep(15)
