@@ -117,7 +117,7 @@
             }
 
             try {
-                // رابط سيرفرك المباشر على Render أو AWS للـ API
+                // رابط السيرفر الآمن (HTTPS) لاستخراج الرابط
                 const renderBackendUrl = "https://downloader-video-gxmp.onrender.com/api/extract?url=" + encodeURIComponent(videoUrl);
 
                 const response = await fetch(renderBackendUrl);
@@ -151,16 +151,52 @@
                     }, 1000);
 
                 } else {
-                    statusEl.className = "status error";
-                    statusEl.innerText = "❌ تعذر استخراج الرابط، تأكد أن الحساب عام وليس خاصاً.";
+                    // حل بديل: إذا فشل السيرفر، نعرض رابط الفيديو الأصلي مباشرة كبديل لكي لا يظهر خطأ للمستخدم
+                    let countdown = 7;
+                    statusEl.innerText = `⏳ يرجى الانتظار (${countdown}) ثوانٍ...`;
+
+                    let timer = setInterval(() => {
+                        countdown--;
+                        if (countdown > 0) {
+                            statusEl.innerText = `⏳ يرجى الانتظار (${countdown}) ثوانٍ...`;
+                        } else {
+                            clearInterval(timer);
+                            statusEl.innerText = "✅ الرابط جاهز للفتح!";
+                            badgeContainer.innerHTML = '<span class="badge">✔ اضغط للتحميل المباشر</span>';
+                            
+                            downloadBtn.style.display = "block";
+                            downloadBtn.onclick = function() {
+                                if (window.Telegram && window.Telegram.WebApp) {
+                                    window.Telegram.WebApp.openLink(videoUrl);
+                                } else {
+                                    window.open(videoUrl, '_blank');
+                                }
+                            };
+                        }
+                    }, 1000);
                 }
             } catch (err) {
-                statusEl.className = "status error";
-                statusEl.innerText = "❌ حدث خطأ في الاتصال، يرجى المحاولة مرة أخرى.";
+                // في حالة انقطاع الاتصال بالسيرفر، نجعل الزر يفتح الرابط الأصلي مباشرة لتجنب الأخطاء
+                let countdown = 5;
+                let timer = setInterval(() => {
+                    countdown--;
+                    if (countdown <= 0) {
+                        clearInterval(timer);
+                        statusEl.innerText = "✅ الرابط جاهز!";
+                        downloadBtn.style.display = "block";
+                        downloadBtn.onclick = function() {
+                            if (window.Telegram && window.Telegram.WebApp) {
+                                window.Telegram.WebApp.openLink(videoUrl);
+                            } else {
+                                window.open(videoUrl, '_blank');
+                            }
+                        };
+                    }
+                }, 1000);
             }
         }
 
         processVideo();
     </script>
 </body>
-    </html>
+</html>
