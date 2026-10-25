@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تحميل الفيديوهات</title>
+    <!-- تضمين مكتبة تيليجرام Web App الرسمية لدعم الفتح الخارجي -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { 
             font-family: Tahoma, sans-serif; 
@@ -16,17 +18,19 @@
         .container { 
             margin-top: 50px; 
         }
-        a.btn { 
+        button.btn, a.btn { 
             display: inline-block; 
             background: #10b981; 
             color: white; 
             padding: 14px 28px; 
             text-decoration: none; 
+            border: none;
             border-radius: 10px; 
             font-weight: bold; 
             margin-top: 20px; 
             font-size: 16px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.2); 
+            cursor: pointer;
         }
         .loading { 
             font-size: 18px; 
@@ -48,6 +52,12 @@
     </div>
 
     <script>
+        // إعدادات الـ Telegram WebApp
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
+
         async function processVideo() {
             const urlParams = new URLSearchParams(window.location.search);
             const videoUrl = urlParams.get('url');
@@ -61,15 +71,43 @@
             }
 
             try {
-                // استخدام رابط سيرفرك المباشر على Render
+                // استخدام رابط سيرفرك المباشر
                 const renderBackendUrl = "https://downloader-video-gxmp.onrender.com/api/extract?url=" + encodeURIComponent(videoUrl);
 
                 const response = await fetch(renderBackendUrl);
                 const data = await response.json();
 
                 if (data.success && data.download_url) {
-                    statusEl.innerText = "✅ تم تجهيز الفيديو بنجاح!";
-                    resultEl.innerHTML = `<a class="btn" href="${data.download_url}" target="_blank">📥 اضغط هنا للتحميل المباشر</a>`;
+                    // بدء عداد الانتظار (7 ثوانٍ) قبل إظهار زر التحميل
+                    let countdown = 7;
+                    statusEl.innerText = `⏳ يرجى الانتظار (${countdown}) ثوانٍ...`;
+
+                    let timer = setInterval(() => {
+                        countdown--;
+                        if (countdown > 0) {
+                            statusEl.innerText = `⏳ يرجى الانتظار (${countdown}) ثوانٍ...`;
+                        } else {
+                            clearInterval(timer);
+                            statusEl.innerText = "✅ تم تجهيز الفيديو بنجاح!";
+                            
+                            // إنشاء زر عند الضغط عليه يتم فتح الرابط في المتصفح الخارجي
+                            const downloadBtn = document.createElement('button');
+                            downloadBtn.className = 'btn';
+                            downloadBtn.innerText = '📥 اضغط هنا للتحميل المباشر';
+                            
+                            downloadBtn.onclick = function() {
+                                if (window.Telegram && window.Telegram.WebApp) {
+                                    // فتح الرابط بالمتصفح الخارجي رسمياً عبر تليجرام
+                                    window.Telegram.WebApp.openLink(data.download_url);
+                                } else {
+                                    window.open(data.download_url, '_blank');
+                                }
+                            };
+                            
+                            resultEl.appendChild(downloadBtn);
+                        }
+                    }, 1000);
+
                 } else {
                     statusEl.className = "error";
                     statusEl.innerText = "❌ تعذر استخراج الرابط. تأكد أن الحساب عام وليس خاصاً.";
