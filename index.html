@@ -85,7 +85,7 @@
 <body>
     <div class="card">
         <h2>تحميل المقطع 📥</h2>
-        <div id="status" class="status">🚀 جاري تحضير رابط التحميل...</div>
+        <div id="status" class="status">🚀 جاري استخراج الرابط المباشر...</div>
         <div id="badge-container"></div>
         
         <button id="downloadBtn" class="btn">اضغط هنا للتحميل الآن 📥</button>
@@ -101,16 +101,64 @@
             window.Telegram.WebApp.expand();
         }
 
-        function processVideo() {
+        async function extractDirectLink(videoUrl) {
+            // 1. استخراج تيك توك عبر TikWM
+            if (videoUrl.includes("tiktok.com") || videoUrl.includes("vm.tiktok.com")) {
+                try {
+                    const res = await fetch("https://tikwm.com/api/?url=" + encodeURIComponent(videoUrl));
+                    const data = await res.json();
+                    if (data.code === 0 && data.data && data.data.play) {
+                        return data.data.play;
+                    }
+                } catch (e) {}
+            }
+
+            // 2. استخراج يوتيوب، سناب شات، وانستغرام عبر Cobalt API
+            try {
+                const response = await fetch("https://api.cobalt.tools/api/json", {
+                    method: "POST",
+                    headers: {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        url: videoUrl,
+                        vQuality: "720"
+                    })
+                });
+                const resData = await response.json();
+                if (resData.url) {
+                    return resData.url;
+                }
+                if (resData.picker && resData.picker.length > 0) {
+                    return resData.picker[0].url;
+                }
+            } catch (e) {}
+
+            return null;
+        }
+
+        async function processVideo() {
             const urlParams = new URLSearchParams(window.location.search);
-            const directUrl = urlParams.get('direct') || urlParams.get('url');
+            const videoUrl = urlParams.get('url') || urlParams.get('direct');
             const statusEl = document.getElementById('status');
             const badgeContainer = document.getElementById('badge-container');
             const downloadBtn = document.getElementById('downloadBtn');
 
+            if (!videoUrl) {
+                statusEl.className = "status error";
+                statusEl.innerText = "⚠️ لم يتم العثور على أي رابط مرسل!";
+                return;
+            }
+
+            statusEl.innerText = "⏳ جاري فك واستخراج ملف الفيديو المباشر...";
+
+            let directUrl = await extractDirectLink(videoUrl);
+
+            // إذا فشل الاستخراج، نمنع التحويل للتطبيق ونظهر خطأ واضحاً
             if (!directUrl) {
                 statusEl.className = "status error";
-                statusEl.innerText = "⚠️ يرجى إرسال رابط الفيديو داخل المحادثة مع البوت أولاً، ثم الضغط على زر التحميل في رسالة البوت.";
+                statusEl.innerText = "❌ تعذر استخراج رابط التحميل المباشر. تأكد أن الحساب عام أو أن الرابط صحيح.";
                 return;
             }
 
@@ -124,7 +172,7 @@
                 } else {
                     clearInterval(timer);
                     statusEl.innerText = "✅ تم تجهيز الرابط بنجاح!";
-                    badgeContainer.innerHTML = '<span class="badge">✔ الرابط جاهز للتحميل المباشر</span>';
+                    badgeContainer.innerHTML = '<span class="badge">✔ الرابط المباشر جاهز</span>';
                     
                     downloadBtn.style.display = "block";
                     downloadBtn.onclick = function() {
