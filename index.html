@@ -33,10 +33,11 @@
             margin-bottom: 20px;
         }
         .status { 
-            font-size: 16px; 
+            font-size: 15px; 
             color: #475569; 
             margin-bottom: 15px;
             font-weight: bold;
+            line-height: 1.6;
         }
         .badge {
             display: inline-block;
@@ -84,7 +85,7 @@
 <body>
     <div class="card">
         <h2>تحميل المقطع 📥</h2>
-        <div id="status" class="status">🚀 جاري تحضير رابط التحميل...</div>
+        <div id="status" class="status">🚀 جاري التحقق من الرابط...</div>
         <div id="badge-container"></div>
         
         <button id="downloadBtn" class="btn">اضغط هنا للتحميل الآن 📥</button>
@@ -100,16 +101,16 @@
             window.Telegram.WebApp.expand();
         }
 
-        function processVideo() {
+        async function processVideo() {
             const urlParams = new URLSearchParams(window.location.search);
-            const directUrl = urlParams.get('direct');
+            const videoUrl = urlParams.get('url') || urlParams.get('direct');
             const statusEl = document.getElementById('status');
             const badgeContainer = document.getElementById('badge-container');
             const downloadBtn = document.getElementById('downloadBtn');
 
-            if (!directUrl) {
+            if (!videoUrl) {
                 statusEl.className = "status error";
-                statusEl.innerText = "❌ لم يتم العثور على رابط الفيديو!";
+                statusEl.innerText = "⚠️ يرجى إرسال رابط الفيديو داخل المحادثة مع البوت أولاً، ثم الضغط على زر التحميل في رسالة البوت.";
                 return;
             }
 
@@ -123,14 +124,14 @@
                 } else {
                     clearInterval(timer);
                     statusEl.innerText = "✅ تم تجهيز الرابط بنجاح!";
-                    badgeContainer.innerHTML = '<span class="badge">✔ الرابط جاهز للتحميل</span>';
+                    badgeContainer.innerHTML = '<span class="badge">✔ اضغط للفتح والتحميل</span>';
                     
                     downloadBtn.style.display = "block";
                     downloadBtn.onclick = function() {
                         if (window.Telegram && window.Telegram.WebApp) {
-                            window.Telegram.WebApp.openLink(directUrl);
+                            window.Telegram.WebApp.openLink(videoUrl);
                         } else {
-                            window.open(directUrl, '_blank');
+                            window.open(videoUrl, '_blank');
                         }
                     };
                 }
