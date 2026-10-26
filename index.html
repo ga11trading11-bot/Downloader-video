@@ -85,7 +85,7 @@
 <body>
     <div class="card">
         <h2>تحميل المقطع 📥</h2>
-        <div id="status" class="status">🚀 جاري التحقق من الرابط...</div>
+        <div id="status" class="status">🚀 جاري تحضير رابط التحميل...</div>
         <div id="badge-container"></div>
         
         <button id="downloadBtn" class="btn">اضغط هنا للتحميل الآن 📥</button>
@@ -101,14 +101,14 @@
             window.Telegram.WebApp.expand();
         }
 
-        async function processVideo() {
+        function processVideo() {
             const urlParams = new URLSearchParams(window.location.search);
-            const videoUrl = urlParams.get('url') || urlParams.get('direct');
+            const directUrl = urlParams.get('direct') || urlParams.get('url');
             const statusEl = document.getElementById('status');
             const badgeContainer = document.getElementById('badge-container');
             const downloadBtn = document.getElementById('downloadBtn');
 
-            if (!videoUrl) {
+            if (!directUrl) {
                 statusEl.className = "status error";
                 statusEl.innerText = "⚠️ يرجى إرسال رابط الفيديو داخل المحادثة مع البوت أولاً، ثم الضغط على زر التحميل في رسالة البوت.";
                 return;
@@ -124,14 +124,14 @@
                 } else {
                     clearInterval(timer);
                     statusEl.innerText = "✅ تم تجهيز الرابط بنجاح!";
-                    badgeContainer.innerHTML = '<span class="badge">✔ اضغط للفتح والتحميل</span>';
+                    badgeContainer.innerHTML = '<span class="badge">✔ الرابط جاهز للتحميل المباشر</span>';
                     
                     downloadBtn.style.display = "block";
                     downloadBtn.onclick = function() {
                         if (window.Telegram && window.Telegram.WebApp) {
-                            window.Telegram.WebApp.openLink(videoUrl);
+                            window.Telegram.WebApp.openLink(directUrl);
                         } else {
-                            window.open(videoUrl, '_blank');
+                            window.open(directUrl, '_blank');
                         }
                     };
                 }
