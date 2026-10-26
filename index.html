@@ -84,7 +84,7 @@
 <body>
     <div class="card">
         <h2>تحميل المقطع 📥</h2>
-        <div id="status" class="status">🚀 جاري معالجة واستخراج الفيديو...</div>
+        <div id="status" class="status">🚀 جاري تحضير رابط التحميل...</div>
         <div id="badge-container"></div>
         
         <button id="downloadBtn" class="btn">اضغط هنا للتحميل الآن 📥</button>
@@ -100,74 +100,41 @@
             window.Telegram.WebApp.expand();
         }
 
-        async function extractDirectLink(videoUrl) {
-            // محاولة جلب رابط التحميل المباشر عبر TikWM
-            try {
-                const response = await fetch("https://tikwm.com/api/?url=" + encodeURIComponent(videoUrl));
-                const res = await response.json();
-                if (res.code === 0 && res.data && res.data.play) {
-                    return res.data.play;
-                }
-            } catch (e) {}
-
-            // محاولة جلب رابط التحميل المباشر عبر Cobalt
-            try {
-                const response = await fetch("https://api.cobalt.tools/api/json", {
-                    method: "POST",
-                    headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                    body: JSON.stringify({ url: videoUrl, vQuality: "720" })
-                });
-                const res = await response.json();
-                if (res.url) return res.url;
-                if (res.picker && res.picker.length > 0) return res.picker[0].url;
-            } catch (e) {}
-
-            return null;
-        }
-
-        async function processVideo() {
+        function processVideo() {
             const urlParams = new URLSearchParams(window.location.search);
-            const videoUrl = urlParams.get('url');
+            const directUrl = urlParams.get('direct');
             const statusEl = document.getElementById('status');
             const badgeContainer = document.getElementById('badge-container');
             const downloadBtn = document.getElementById('downloadBtn');
 
-            if (!videoUrl) {
+            if (!directUrl) {
                 statusEl.className = "status error";
-                statusEl.innerText = "❌ لم يتم العثور على أي رابط!";
+                statusEl.innerText = "❌ لم يتم العثور على رابط الفيديو!";
                 return;
             }
 
-            // جلب الرابط المباشر
-            const directDownloadUrl = await extractDirectLink(videoUrl);
+            let countdown = 7;
+            statusEl.innerText = `⏳ يرجى الانتظار (${countdown}) ثوانٍ...`;
 
-            if (directDownloadUrl) {
-                let countdown = 7;
-                statusEl.innerText = `⏳ يرجى الانتظار (${countdown}) ثوانٍ...`;
-
-                let timer = setInterval(() => {
-                    countdown--;
-                    if (countdown > 0) {
-                        statusEl.innerText = `⏳ يرجى الانتظار (${countdown}) ثوانٍ...`;
-                    } else {
-                        clearInterval(timer);
-                        statusEl.innerText = "✅ تم تجهيز الفيديو بنجاح!";
-                        badgeContainer.innerHTML = '<span class="badge">✔ اضغط للتحميل المباشر</span>';
-                        
-                        downloadBtn.style.display = "block";
-                        downloadBtn.onclick = function() {
-                            if (window.Telegram && window.Telegram.WebApp) {
-                                window.Telegram.WebApp.openLink(directDownloadUrl);
-                            } else {
-                                window.open(directDownloadUrl, '_blank');
-                            }
-                        };
-                    }
-                }, 1000);
-            } else {
-                statusEl.className = "status error";
-                statusEl.innerText = "❌ تعذر استخراج رابط التحميل، تأكد أن الحساب عام وليس خاصاً.";
-            }
+            let timer = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    statusEl.innerText = `⏳ يرجى الانتظار (${countdown}) ثوانٍ...`;
+                } else {
+                    clearInterval(timer);
+                    statusEl.innerText = "✅ تم تجهيز الرابط بنجاح!";
+                    badgeContainer.innerHTML = '<span class="badge">✔ الرابط جاهز للتحميل</span>';
+                    
+                    downloadBtn.style.display = "block";
+                    downloadBtn.onclick = function() {
+                        if (window.Telegram && window.Telegram.WebApp) {
+                            window.Telegram.WebApp.openLink(directUrl);
+                        } else {
+                            window.open(directUrl, '_blank');
+                        }
+                    };
+                }
+            }, 1000);
         }
 
         processVideo();
